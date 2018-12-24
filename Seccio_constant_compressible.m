@@ -23,7 +23,7 @@ Per = Di*pi; %Perímetre del VC. [m^2]
 
 R = 287; %Constant dels gasos per l'aire
 gamma = 1.4; %Constant adiab. de l'aire
-Min = 0.2; %Mach d'entrada. 
+Min = 0.76; %Mach d'entrada. 
 Tin = 400; %Temperatura d'entrada [K]
 vin = sqrt(gamma*R*Tin)*Min; %Velocitat d'entrada 
 pin = 5e5; %Pressió d'entrada [Pa]
