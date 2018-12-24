@@ -195,20 +195,25 @@ for i = 1:N
     B = C_v*A_t*Sup;
     C = B_v*C_t*massa*R;
     
+    %Ara tenim l'equació quadràtica
     syms vel;
     eqn1 = A*vel^2 - B*vel + C == 0;
     
     det = B^2-4*A*C;
     det_v(i) = det;
-    if B^2-4*A*C < 0 
+    
+    if det < 0 %Discriminant negatiu, no te solució física
         break;
     else
-    v_sol = solve(eqn1, vel);
+    v_sol = solve(eqn1, vel); %Guardem les dues solucions a v_sol
     end
-    v1 = double(v_sol(1));
+    
+    v1 = double(v_sol(1)); 
     v2 = double(v_sol(2));
     v1_v(i) = v1;
     v2_v(i) = v2;
+    
+    % Calculem totes les propietats amb les dues velocitats.
     
     Vol = Sup*delta_x;
     P1 = (C_v-A_v*v1)/B_v;
@@ -216,18 +221,20 @@ for i = 1:N
     P2 = (C_v-A_v*v2)/B_v;
     T2 = (C_t-B_t*v2^2)/A_t;
     
-    P1_v(i) = P1;
+    P1_v(i) = P1; %Guardem en vectors per poder veure-ho desrpés si cal
     P2_v(i) = P2;
     T2_v(i) = T2;
     T2_v(i) = T1;
     
+    %Trobem l'entropia generada amb les dues velocitats.
+    
     Sgen1 = 1/Vol*(massa*(Cpi*log(T1/T(i))-R*log(P1/P(i))) - q(i)*Di*pi*delta_x/Tt);
     Sgen2 = 1/Vol*(massa*(Cpi*log(T2/T(i))-R*log(P2/P(i))) - q(i)*Di*pi*delta_x/Tt);
     
-    Sgen1_v(i) = Sgen1;
+    Sgen1_v(i) = Sgen1; %tornem a guardar per si acàs. 
     Sgen2_v(i) = Sgen2;
     
-    if Sgen1 < 0 && Sgen2 < 0  
+    if Sgen1 < 0 && Sgen2 < 0  %Si les dues són negatives, no té solució.
         break;
     end
     
