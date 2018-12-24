@@ -1,4 +1,4 @@
-function [ r, alpha ] = Recuperacio (T_inf, T_wall, P_inf, v, R, Delta)
+function [ r, alpha, mu, Cp ] = Recuperacio (T_inf, T_wall, P_inf, v, R, Delta)
     Tr = T_inf; %Suposem la temperatura de recuperació
     for i=1:100 %Fixem un màxim de 100 iteracions
         T_ref = (T_wall+T_inf)/2 + 0.22*(Tr-T_inf); %Temperatura de referencia
