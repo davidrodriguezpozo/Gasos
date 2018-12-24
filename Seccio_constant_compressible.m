@@ -12,7 +12,7 @@ clear all;
 Di = 0.01; ri = Di/2; L = 7.659; epsilon = 0.004; R = 287;
 
 gamma = 1.4;
-Min = 0.6;
+Min = 0.3;
 Tin = 400;
 vin = sqrt(gamma*R*Tin)*Min; 
 pin = 5e5; 
@@ -97,36 +97,29 @@ for i = 1:N
     P_s(i+1) = P(i);
     V_s(i+1) = v(i);
     rho_s(i+1) = rho(i);
-    %dif = 10e10; %Valor arbitrari per poder iterar un altre cop
+    dif = 10e10; %Valor arbitrari per poder iterar un altre cop
     
-    %while dif > 1
+    while dif > 1
     y = 1;
-    dif2 = 30;  
+    dif2 = 30;  %diferència inicial entre Tr* i Tr
+    
         while dif2 > 1e-10 %Iteracions per trobar el valor de Tr
  
-    Ti = 0.5*(Tt+Tin)+0.22*(Trs-Tin); %Tr anira canviant a cada iteració;
-    vi = 0.5*(v(i)+v(i+1));
+    Ti = 0.5*(Tt+Tin)+0.22*(Trs-Tin); %Trs anira canviant a cada iteració;
+    vi = 0.5*(v(i)+v(i+1)); 
     Pi = 0.5*(P(i)+P(i+1));
     rhoi = Pi/(287*Ti);
     
-    if Ti < 1500 %Càlcul de mu
-       %mu = (1.458e-6*Ti^1.5)/(Ti+110.4);
-       mu = (2.5393e-5*sqrt(Ti/273.15))/(1+122/Ti);
-    else
-       mu = (2.5393e-5*sqrt(Ti/273.15))/(1+122/Ti);
-    end
-   
-    if Tt < 1500  %càlcul de mu_w
-       %mu_w = (1.458e-6*Tt^1.5)/(Tt+110.4);
-       mu_w = (2.5393e-5*sqrt(Tt/273.15))/(1+122/Tt);
-    else
-       mu_w = (2.5393e-5*sqrt(Tt/273.15))/(1+122/Tt);
-    end
-   
-    %lambda = (2.648e-3*sqrt(Ti))/(1+(245.4/Ti)*10^(-12/Ti));
+    % Càlcul de mu i mu_w.
+    
+    mu = (2.5393e-5*sqrt(Ti/273.15))/(1+122/Ti);
+    mu_w = (2.5393e-5*sqrt(Tt/273.15))/(1+122/Tt);
     lambda = 3.807e-3+7.4e-5*Ti;
-    %Cpi = 1034.09-2.849e-1*Ti+7.817e-4*Ti^2-4.971e-7*Ti^3+1.077e-10*Ti^4;
     Cpi = 1022 - 0.166*Ti + 3.5025e-4*Ti^2;
+    
+    
+    
+    %Grup adimensionals
     
     Re = rhoi*vi*Di/mu;
     
@@ -134,15 +127,14 @@ for i = 1:N
     
     Gz = (pi*Di)/(4*L)*Re*Pr;
     
-    if Re < 2000
-       r = Pr^(1/2);
-    else
-       r = Pr^(1/3);
-    end
+    r = Pr^(1/3);
     
+    
+    %Tornem a calcular Tr i la comparem amb Trs
     Tr = Tin + r*vi^2/(2*Cpi);
     
     dif2 = abs(Tr-Trs);
+    
     Trs = Tr;
     y = y+1;
     dif2(y) = dif2;
@@ -253,7 +245,7 @@ for i = 1:N
     Sgen1_v(i) = Sgen1;
     Sgen2_v(i) = Sgen2;
     
-    if Sgen1 < 0 && Sgen2 < 0
+    if Sgen1 < 0 && Sgen2 < 0  
         break;
     end
     
@@ -284,8 +276,8 @@ for i = 1:N
     V_s(i+1) = v(i+1);
     P_s(i+1) = P(i+1);
     T_s(i+1) = T(i+1);      
-    x(i)
-   %end
+    x(i); %Imprimim x(i) Per saber en quin punt del conducte es torba el programa
+   end
     
 end
 Q = sum(q)
