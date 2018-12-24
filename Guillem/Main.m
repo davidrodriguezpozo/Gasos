@@ -19,7 +19,7 @@ Delta = 1e-10; %Delta per convergencia
 %Dades flux d'entrada
 P_in = 5e5; %Pressió d'entrada [Pa]
 T_in = 400; %Temperatura d'entrada [K]
-M_in = 0.6; %Mach d'entrada
+M_in = 0.2; %Mach d'entrada
 
 %Dades físiques
 R_gas = 287; %Cte gas ideal [Pa*m^3/(kg*K)]

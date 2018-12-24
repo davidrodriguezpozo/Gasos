@@ -11,7 +11,7 @@ function [ r, alpha ] = Recuperacio (T_inf, T_wall, P_inf, v, R, Delta)
         if T_ref<1500
             mu = (1.458*10^(-6)*T_ref^1.5)/(T_ref+110.4);
         end            
-        lambda = 2.648*10^(-3)*sqrt(T_ref)/(1+(245.4/T_ref)*10^(-12/T); %Conductivitat tèrmica
+        lambda = 2.648*10^(-3)*sqrt(T_ref)/(1+(245.4/T_ref)*10^(-12/T_ref)); %Conductivitat tèrmica
         Cp = 1034.09-2.849*10^(-1)*T_ref+7.817*10^(-4)*T_ref^2-4.971*10^(-7)*T_ref^3+1.088*10^(-10)*T_ref^4;
         
         %Re i Pr local
