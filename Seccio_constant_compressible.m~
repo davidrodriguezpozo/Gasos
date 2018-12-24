@@ -12,7 +12,7 @@ clear all;
 Di = 0.01; ri = Di/2; L = 7.659; epsilon = 0.004; R = 287;
 
 gamma = 1.4;
-Min = 0.1;
+Min = 0.3;
 Tin = 400;
 vin = sqrt(gamma*R*Tin)*Min; 
 pin = 5e5; 
@@ -65,9 +65,8 @@ T1_v = zeros(N,1);
 T2_v = zeros(N,1);
 v1_v = zeros(N,1);
 v2_v = zeros(N,1);
-fun = @(var) 1022 - 0.166*var + 3.5025e-4*var.^2; %funcio del Cp (per Cpr)
 
-Trs = 300; %Suposem la temperatura de recuperació inicial
+Trs = Tin; %Suposem la temperatura de recuperació inicial
 
 %Discretitzem a tots els nodes (variables que no canvien), i omplim els
 %vectors amb les variables suposades.
@@ -100,13 +99,13 @@ for i = 1:N
     rho_s(i+1) = rho(i);
     dif = 10e10; %Valor arbitrari per poder iterar un altre cop
     
-    while dif > 1e-2
+    while dif > 1
     y = 1;
     dif2 = 30;  %diferència inicial entre Tr* i Tr
     
         while dif2 > 1e-2 %Iteracions per trobar el valor de Tr
  
-    Ti = 0.5*(Tt+Tin)+0.22*(Trs-Tin); %Ti = temperatura de referencia, Trs anira canviant a cada iteració;
+    Ti = 0.5*(Tt+Tin)+0.22*(Trs-Tin); %Trs anira canviant a cada iteració;
     vi = 0.5*(v(i)+v(i+1)); 
     Pi = 0.5*(P(i)+P(i+1));
     rhoi = Pi/(287*Ti);
@@ -117,7 +116,7 @@ for i = 1:N
     mu_w = (2.5393e-5*sqrt(Tt/273.15))/(1+122/Tt);
     lambda = 3.807e-3+7.4e-5*Ti;
     Cpi = 1022 - 0.166*Ti + 3.5025e-4*Ti^2;
-    Cpr = integral(fun,Tin,Trs)/(Trs-Tin);
+    
     
     %Grup adimensionals
     
@@ -131,7 +130,7 @@ for i = 1:N
     
     
     %Tornem a calcular Tr i la comparem amb Trs
-    Tr = Tin + r*vi^2/(2*Cpr);
+    Tr = Tin + r*vi^2/(2*Cpi);
     
     dif2 = abs(Tr-Trs);
     Trs = Tr;
@@ -165,8 +164,17 @@ for i = 1:N
     
     %Càlcul del Nussel i de alfa
     
-    C = 0.023; m=0.8; n=0.4; K = 1;
-  
+%     if Re < 2000 && Gz> 10 %estem a flux laminar, tub curt. 
+%        C = 1.86; m = 1/3; n = 1/3; K = (Di/L)^(1/3)*(mu/mu_w)^0.14;
+%     
+%     elseif Re < 2000 && Gz < 10 %Flux Laminar, tub llarg.
+%        C = 3.66; m = 0; n = 0; K = 1;
+%     end
+    
+%     if  Re > 2000
+        C = 0.023; m=0.8; n=0.4; K = 1;
+    % end
+    
     Nu = C*Re^m*Pr^n*K;
     alfa = lambda*Nu/Di;
     Nu_v(i) = Nu;
