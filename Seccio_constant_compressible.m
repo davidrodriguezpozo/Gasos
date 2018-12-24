@@ -14,7 +14,7 @@ clear all;
 
 Di = 0.01; %Diàmetre del tub [m]
 ri = Di/2; %[m]
-L = 0.07; %Longitud del tub [m]
+L = 0.04; %Longitud del tub [m]
 epsilon = 0.004; 
 S = pi*ri^2; %Superfície del VC [m^2]
 Per = Di*pi; %Perímetre del VC. [m^2]
@@ -23,7 +23,7 @@ Per = Di*pi; %Perímetre del VC. [m^2]
 
 R = 287; %Constant dels gasos per l'aire
 gamma = 1.4; %Constant adiab. de l'aire
-Min = 0.76; %Mach d'entrada. 
+Min = 0.8; %Mach d'entrada. 
 Tin = 400; %Temperatura d'entrada [K]
 vin = sqrt(gamma*R*Tin)*Min; %Velocitat d'entrada 
 pin = 5e5; %Pressió d'entrada [Pa]
@@ -66,7 +66,7 @@ T1_v = zeros(N,1);
 T2_v = zeros(N,1);
 v1_v = zeros(N,1);
 v2_v = zeros(N,1);
-
+Mach = zeros(N+1,1);
 Trs = 300; %Suposem la temperatura de recuperació inicial
 
 %Omplim els vectors amb les variables suposades.
@@ -80,6 +80,7 @@ for i = 1:N+1
     v(i) = vin;
     P(i) = pin;
     rho(i) = rhoin;
+    Mach(i) = Min;
 end
 
 
@@ -104,15 +105,16 @@ for i = 1:N
     
     %Càlcul dels coeficient alfa, r i f
     
-    [alfa, r, f, Cpi] = compressible(Ti, Tt, vi, Pi, Di); 
+    [alfa, r, f] = compressible(Ti, Tt, vi, Pi, Di); 
     
     %Un cop calculats seguim amb el càlcul de Tr
+
+    f_v(i) = f; %Vector de coeficients de fricció
+    alfa_v(i) = alfa; 
     
-    Tr = Tin + r*vi^2/(2*Cpi);
- 
-    f_v(i) = f;
-    alfa_v(i) = alfa;
-    Cpi = 1022 - 0.166*Ti + 3.5025e-4*Ti^2;
+    
+    Cpi = 1034.09-2.849*10^(-1)*Ti+7.817*10^(-4)*Ti^2-4.971*10^(-7)*Ti^3+1.088*10^(-10)*Ti^4;
+    Tr = Ti + r*vi^2/(2*Cpi);
     q(i) = alfa*(Tt-Tr)*Per*delta_x; %podem calcular el flux de calor amb Tr;
     
     %Resolem el sistema d'equacions
@@ -160,8 +162,8 @@ for i = 1:N
    
     %Trobem l'entropia generada amb les dues velocitats.
    
-    Sgen1 = 1/Vol*(m_punt*(Cpi*log(T1/T(i))-R*log(P1/P(i))) - q(i)/Tt);
-    Sgen2 = 1/Vol*(m_punt*(Cpi*log(T2/T(i))-R*log(P2/P(i))) - q(i)/Tt);
+    Sgen1 = 1/Vol*(m_punt*(Cpi*log(T1/T(i))-R*log(P1/P(i))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
+    Sgen2 = 1/Vol*(m_punt*(Cpi*log(T2/T(i))-R*log(P2/P(i))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
     
     Sgen1_v(i) = Sgen1; %tornem a guardar per si acàs. 
     Sgen2_v(i) = Sgen2;
@@ -182,29 +184,31 @@ for i = 1:N
         v(i+1) = v2;
         T(i+1) = T2;
         P(i+1) = P2;
-        Sgen(i) = Sgen2;
+        Sgen(i+1) = Sgen2;
         disp('Entropia 1 és imaginaria, entropia 2 positiva');
     end
     if isreal(Sgen2) == 0 && Sgen1 > 0 %Comprovem si Sgen2 es real o no
         v(i+1) = v1;
         T(i+1) = T1;
         P(i+1) = P1;
-        Sgen(i) = Sgen1;
+        Sgen(i+1) = Sgen1;
         disp('Entropia 2 és imaginaria, entropia 1 positiva');
     end
     if abs(Sgen1) > abs(Sgen2) %Cas en que les dues són positives
         v(i+1) = v2;
         T(i+1) = T2;
         P(i+1) = P2;
-        Sgen(i) = Sgen2;
+        Sgen(i+1) = Sgen2;
     else
         v(i+1) = v1;
         T(i+1) = T1;
         P(i+1) = P1;
-        Sgen(i) = Sgen1;
+        Sgen(i+1) = Sgen1;
     end
     
     rho(i+1) = P(i+1)/(R*T(i+1));
+    c = sqrt(gamma*R*T(i));
+    Mach(i+1) = v(i+1)/c;
     
     %Guardem i comprovem les diferències entre suposat-calculat.
     
@@ -219,7 +223,7 @@ for i = 1:N
     V_s(i+1) = v(i+1);
     P_s(i+1) = P(i+1);
     T_s(i+1) = T(i+1);      
-    x(i); %Imprimim x(i) Per saber en quin punt del conducte es torba el programa
+    
    end
     
 end
@@ -275,8 +279,8 @@ for i=1:N
         vi = (v(i)+v(i+1))/2;
         Ti = (T(i)+T(i+1))/2;
         Pi = (P(i)+P(i+1))/2;
-
-        [alfa, r, f, Cpi] = compressible(Ti, Tt, vi, Pi, Di);
+        Cpi = 1034.09-2.849*10^(-1)*Ti+7.817*10^(-4)*Ti^2-4.971*10^(-7)*Ti^3+1.088*10^(-10)*Ti^4;
+        [alfa, r, f] = compressible(Ti, Tt, vi, Pi, Di);
         Tr = Ti + r*vi^2/(Cpi*2); %Temperatura de recuperació
         Q = Q + alfa*(Tt-Tr)*pi*Di*delta_x;   
 end
@@ -289,22 +293,29 @@ end
 
 %% Plots per les diferents variables
 figure;
-plot(x,T);
-title('Temperatura en funció de x');
-
-figure;
+subplot(2,2,1);
 plot(x,P);
 title('Pressió en funció de x');
 
-figure;
+subplot(2,2,2);
+plot(x,T);
+title('Temperatura en funció de x');
+
+subplot(2,2,3);
 plot(x,v);
 title('Velocitat en funció de x');
 
+subplot(2,2,4);
+plot(x,Mach);
+title('Mach en funció de x');
+
 figure;
+
+subplot(2,2,1);
 plot(x,rho);
 title('Densitat en funció de x');
 
-figure;
+subplot(2,2,2);
 plot(x,Sgen);
 title('Entropia generada en funció de x');
 
