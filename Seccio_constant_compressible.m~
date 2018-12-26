@@ -1,5 +1,8 @@
 %----------DINÀMICA DE GASOS-------------
 
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter','latex'); 
+set(groot, 'defaultLegendInterpreter','latex');
 %RESOLUCIÓ ANALÍTICA DE PROBLEMA COMBINAT. 
 
 %TUB AMB FLUID INTERIOR I CONVECCIÓ EXTERIOR.
@@ -14,7 +17,7 @@ clear all;
 
 Di = 0.01; %Diàmetre del tub [m]
 ri = Di/2; %[m]
-L = 0.04; %Longitud del tub [m]
+L = 0.05364; %Longitud del tub [m]
 epsilon = 0.004; 
 S = pi*ri^2; %Superfície del VC [m^2]
 Per = Di*pi; %Perímetre del VC. [m^2]
@@ -23,83 +26,89 @@ Per = Di*pi; %Perímetre del VC. [m^2]
 
 R = 287; %Constant dels gasos per l'aire
 gamma = 1.4; %Constant adiab. de l'aire
-Min = 0.8; %Mach d'entrada. 
+M = [0.3;0.6;0.7;0.7851];  %Mach d'entrada. 
 Tin = 400; %Temperatura d'entrada [K]
-vin = sqrt(gamma*R*Tin)*Min; %Velocitat d'entrada 
 pin = 5e5; %Pressió d'entrada [Pa]
 rhoin = pin/(287*Tin); %Densitat a l'entrada [Kg/m^3]
-m_punt = S*vin*rhoin; %Cabal màssic [Kg/s]
-Tt = 300; %Temperatura de la paret del tub [K];
+Tt = 300; %Temperatura de la paret del tub [K]
+adiabatic = false; %En cas de que sigui adiabàtic --> true
 
-%Discretització del tub, condicions d'entrada...
+
+%Discretització del tub
 
 N = 10000; %numero de VC
-delta_x = L/N;
-x = 0:delta_x:L;
+delta_x = L/N; %Longitud del VC
+x = 0:delta_x:L; %Vector de la longitud del tub 
 
-%Definicio de tots els vectors
+%Definicio de tots els vectors (NxM)
 
-T_s = zeros(N+1,1);
-V_s = zeros(N+1,1);
-P_s = zeros(N+1,1);
-rho_s = zeros(N+1,1);
-v = zeros(N+1,1);
-T = zeros(N+1,1);
-P = zeros(N+1,1);
-rho = zeros(N+1,1);
-Re_v = zeros(N,1);
-Pr_v = zeros(N,1);
-Nu_v = zeros(N,1);
-alfa_v = zeros(N,1);
-mu_w_v = zeros(N,1);
-Gz_v = zeros(N,1);
-f_v = zeros(N,1);
-q = zeros(N,1);
-T_r = zeros(N,1);
-Sgen = zeros(N+1,1);
-Sgen1_v = zeros(N,1);
-Sgen2_v = zeros(N,1);
-det_v = zeros(N,1);
-P1_v = zeros(N,1);
-P2_v = zeros(N,1);
-T1_v = zeros(N,1);
-T2_v = zeros(N,1);
-v1_v = zeros(N,1);
-v2_v = zeros(N,1);
-
+T_s = zeros(N+1,length(M));
+V_s = zeros(N+1,length(M));
+P_s = zeros(N+1,length(M));
+rho_s = zeros(N+1,length(M));
+v = zeros(N+1,length(M));
+T = zeros(N+1,length(M));
+P = zeros(N+1,length(M));
+rho = zeros(N+1,length(M));
+q = zeros(N,length(M));
+T_r = zeros(N,length(M));
+Sgen = zeros(N+1,length(M));
+Sgen1_v = zeros(N,length(M));
+Sgen2_v = zeros(N,length(M));
+det_v = zeros(N,length(M));
+P1_v = zeros(N,length(M));
+P2_v = zeros(N,length(M));
+T1_v = zeros(N,length(M));
+T2_v = zeros(N,length(M));
+v1_v = zeros(N,length(M));
+v2_v = zeros(N,length(M));
+Mach = zeros(N+1,length(M));
+f_v = zeros(N,length(M));
+m_v = zeros(length(M));
+vin_v = zeros(length(M));
 Trs = 300; %Suposem la temperatura de recuperació inicial
 
 %Omplim els vectors amb les variables suposades.
 
-for i = 1:N+1
-    T_s(i) = Tin;
-    V_s(i) = vin;
-    P_s(i) = pin;
-    rho_s(i) = rhoin;
-    T(i) = Tin;
-    v(i) = vin;
-    P(i) = pin;
-    rho(i) = rhoin;
-end
+
 
 
 %% Resolució del problema
+
+for j = 1:length(M) %Variem el Mach a l'entrada
+    Min = M(j);
+    vin = sqrt(gamma*R*Tin)*Min; %Velocitat d'entrada 
+    m_punt = S*vin*rhoin; %Cabal màssic [Kg/s]
+    vin_v(j) = vin;
+    m_v(j) = m_punt;
+    
+    for i = 1:N+1
+    T_s(i,j) = Tin;
+    V_s(i,j) = vin;
+    P_s(i,j) = pin;
+    rho_s(i,j) = rhoin;
+    T(i,j) = Tin;
+    v(i,j) = vin;
+    P(i,j) = pin;
+    rho(i,j) = rhoin;
+    Mach(i,j) = Min;
+    end
     
 for i = 1:N
 
-    T_s(i+1) = T(i); %Suposem variables de sortida = entrada.
-    P_s(i+1) = P(i);
-    V_s(i+1) = v(i);
-    rho_s(i+1) = rho(i);
+    T_s(i+1,j) = T(i,j); %Suposem variables de sortida = entrada.
+    P_s(i+1,j) = P(i,j);
+    V_s(i+1,j) = v(i,j);
+    rho_s(i+1,j) = rho(i,j);
     dif = 10e10; %Valor arbitrari per poder iterar un altre cop
     y=0;
     while dif > 1e-10 && y<1000 %Evitem que faci més de 1000 iteracions.
 
     y = y+1; %Comptador d'iteracions
     
-    Ti = 0.5*(T(i)+T(i+1)); % Variables mitges del VC.
-    vi = 0.5*(v(i)+v(i+1)); 
-    Pi = 0.5*(P(i)+P(i+1));
+    Ti = 0.5*(T(i,j)+T(i+1,j)); % Variables mitges del VC.
+    vi = 0.5*(v(i,j)+v(i+1,j)); 
+    Pi = 0.5*(P(i,j)+P(i+1,j));
     rhoi = Pi/(287*Ti);
     
     %Càlcul dels coeficient alfa, r i f
@@ -107,24 +116,20 @@ for i = 1:N
     [alfa, r, f] = compressible(Ti, Tt, vi, Pi, Di); 
     
     %Un cop calculats seguim amb el càlcul de Tr
-
-    f_v(i) = f; %Vector de coeficients de fricció
-    alfa_v(i) = alfa; 
-    
-    
+    f_v(i,j) = f;
     Cpi = 1034.09-2.849*10^(-1)*Ti+7.817*10^(-4)*Ti^2-4.971*10^(-7)*Ti^3+1.088*10^(-10)*Ti^4;
-    Tr = Ti + r*vi^2/(2*Cpi);
-    q(i) = alfa*(Tt-Tr)*Per*delta_x; %podem calcular el flux de calor amb Tr;
+    Tr = T(i) + r*vi^2/(2*Cpi);
+    q(i,j) = alfa*(Tt-Tr)*Per*delta_x; %podem calcular el flux de calor amb Tr;
     
     %Resolem el sistema d'equacions
 
     A_v = m_punt + f*rhoi*abs(vi)*Per*delta_x/4;
     B_v = S;
-    C_v = S*P(i)+(m_punt-f*rhoi*abs(vi)*Per*delta_x/4)*v(i);
+    C_v = S*P(i,j)+(m_punt-f*rhoi*abs(vi)*Per*delta_x/4)*v(i,j);
     
     A_t = m_punt*Cpi + 0.5*alfa*Per*delta_x;
     B_t = 0.5*m_punt + (r*alfa*Per*delta_x)/(4*Cpi);
-    C_t = (m_punt*Cpi - alfa*Per*delta_x*0.5)*T(i)+(0.5*m_punt-(r*alfa*Per*delta_x)/(4*Cpi))*v(i)^2+ alfa*Tt*Per*delta_x;
+    C_t = (m_punt*Cpi - alfa*Per*delta_x*0.5)*T(i,j)+(0.5*m_punt-(r*alfa*Per*delta_x)/(4*Cpi))*v(i,j)^2+ alfa*Tt*Per*delta_x;
     
     A = A_v*A_t*S - B_v*B_t*m_punt*R;
     B = C_v*A_t*S;
@@ -135,7 +140,7 @@ for i = 1:N
    
     
     det = B^2-4*A*C;
-    det_v(i) = det;
+    det_v(i,j) = det;
     
     if det < 0 %Discriminant negatiu, no te solució física
         error('El determinant és negatiu');
@@ -143,8 +148,8 @@ for i = 1:N
     
     v1 = (B+sqrt(B^2-4*A*C))/(2*A); 
     v2 = (B-sqrt(B^2-4*A*C))/(2*A);
-    v1_v(i) = v1;
-    v2_v(i) = v2;
+    v1_v(i,j) = v1;
+    v2_v(i,j) = v2;
     
     % Calculem totes les propietats amb les dues velocitats.
     
@@ -154,18 +159,21 @@ for i = 1:N
     P2 = (C_v-A_v*v2)/B_v;
     T2 = (C_t-B_t*v2^2)/A_t;
     
-    P1_v(i) = P1; %Guardem en vectors per poder veure-ho desrpés si cal
-    P2_v(i) = P2;
-    T2_v(i) = T2;
-    T1_v(i) = T1;
-   
-    %Trobem l'entropia generada amb les dues velocitats.
-   
-    Sgen1 = 1/Vol*(m_punt*(Cpi*log(T1/T(i))-R*log(P1/P(i))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
-    Sgen2 = 1/Vol*(m_punt*(Cpi*log(T2/T(i))-R*log(P2/P(i))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
+    P1_v(i,j) = P1; %Guardem en vectors per poder veure-ho desrpés si cal
+    P2_v(i,j) = P2;
+    T2_v(i,j) = T2;
+    T1_v(i,j) = T1;
     
-    Sgen1_v(i) = Sgen1; %tornem a guardar per si acàs. 
-    Sgen2_v(i) = Sgen2;
+    %Trobem l'entropia generada amb les dues velocitats.
+    if adiabatic == true
+        alfa = 0;
+    end
+    
+    Sgen1 = 1/Vol*(m_punt*(Cpi*log(T1/T(i,j))-R*log(P1/P(i,j))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
+    Sgen2 = 1/Vol*(m_punt*(Cpi*log(T2/T(i,j))-R*log(P2/P(i,j))) - alfa*(Tt-Tr)*Per*delta_x/Tt);
+    
+    Sgen1_v(i,j) = Sgen1; %tornem a guardar per si acàs. 
+    Sgen2_v(i,j) = Sgen2;
     
     if Sgen1 < 0 && Sgen2 < 0  %Si les dues són negatives, no té solució.
         error('Les dues entropies són negatives');
@@ -180,69 +188,74 @@ for i = 1:N
     end
         
     if isreal(Sgen1) == 0 && Sgen2 > 0 %Comprovem si Sgen1 es real o no
-        v(i+1) = v2;
-        T(i+1) = T2;
-        P(i+1) = P2;
-        Sgen(i+1) = Sgen2;
-        disp('Entropia 1 és imaginaria, entropia 2 positiva');
+        v(i+1,j) = v2;
+        T(i+1,j) = T2;
+        P(i+1,j) = P2;
+        Sgen(i+1,j) = Sgen2;
+        %disp('Entropia 1 és imaginaria, entropia 2 positiva');
     end
     if isreal(Sgen2) == 0 && Sgen1 > 0 %Comprovem si Sgen2 es real o no
-        v(i+1) = v1;
-        T(i+1) = T1;
-        P(i+1) = P1;
-        Sgen(i+1) = Sgen1;
+        v(i+1,j) = v1;
+        T(i+1,j) = T1;
+        P(i+1,j) = P1;
+        Sgen(i+1,j) = Sgen1;
         disp('Entropia 2 és imaginaria, entropia 1 positiva');
     end
     if abs(Sgen1) > abs(Sgen2) %Cas en que les dues són positives
-        v(i+1) = v2;
-        T(i+1) = T2;
-        P(i+1) = P2;
-        Sgen(i+1) = Sgen2;
+        v(i+1,j) = v2;
+        T(i+1,j) = T2;
+        P(i+1,j) = P2;
+        Sgen(i+1,j) = Sgen2;
     else
-        v(i+1) = v1;
-        T(i+1) = T1;
-        P(i+1) = P1;
-        Sgen(i+1) = Sgen1;
+        v(i+1,j) = v1;
+        T(i+1,j) = T1;
+        P(i+1,j) = P1;
+        Sgen(i+1,j) = Sgen1;
     end
     
-    rho(i+1) = P(i+1)/(R*T(i+1));
-    c = sqrt(gamma*R*T(i));
-    Mach(i) = v(i)/c;
+    rho(i+1,j) = P(i+1,j)/(R*T(i+1,j));
+    c = sqrt(gamma*R*T(i,j));
+    Mach(i+1,j) = v(i+1,j)/c;
     
     %Guardem i comprovem les diferències entre suposat-calculat.
     
-    difvector(1) = abs(v(i+1)-V_s(i+1));
-    difvector(2) = abs(T(i+1)-T_s(i+1));
-    difvector(3) = abs(P(i+1)-P_s(i+1));
+    difvector(1) = abs(v(i+1,j)-V_s(i+1,j));
+    difvector(2) = abs(T(i+1,j)-T_s(i+1,j));
+    difvector(3) = abs(P(i+1,j)-P_s(i+1,j));
     
     dif = max(difvector);
 
     %Canviem el vector suposat pel calculat i tornem a iterar.
     
-    V_s(i+1) = v(i+1);
-    P_s(i+1) = P(i+1);
-    T_s(i+1) = T(i+1);      
+    V_s(i+1,j) = v(i+1,j);
+    P_s(i+1,j) = P(i+1,j);
+    T_s(i+1,j) = T(i+1,j);      
     
    end
     
 end
-Q = sum(q);
-T_out = T(N+1);
-P_out = P(N+1);
-v_out = v(N+1);
-Re_out = Re_v(N);
-Pr_out = Pr_v(N);
+
+end
+
 
 
 
 %% Verificació del codi
 
+
+for j =1:length(M)
+vin = vin_v(j);
+m_punt = m_v(j);  
+
 % Massa
 
-massa_out = v(N+1)*rho(N+1)*S;
-dif_mas = abs(m_punt-massa_out)*100/m_punt;
+massa_out = v(N+1,j)*rho(N+1,j)*S;
+dif_mas = abs(m_v(j)-massa_out)*100/m_v(j);
 if dif_mas<0.1
-    disp('Conservació massa correcta')
+    disp('Conservacio massa correcta per Mach = ')
+    disp('')
+    disp(M(j))
+    disp('')
 end
 
 % Momentum
@@ -250,15 +263,18 @@ end
 Momentumin = m_punt*vin+pin*S; %Calculem el momentum a l'entrada
 freg = 0;
 for i=1:N
-    vi = (v(i)+v(i+1))/2;
-    rhoi = (rho(i)+rho(i+1))/2;
-    freg = freg + f_v(i)*rhoi*vi^2*pi*Di*delta_x/2; %Sumem la força de fregament total
+    vi = (v(i,j)+v(i+1,j))/2;
+    rhoi = (rho(i,j)+rho(i+1,j))/2;
+    freg = freg + f_v(i,j)*rhoi*vi^2*pi*Di*delta_x/2; %Sumem la força de fregament total
 end
 
-Momentumout = m_punt*v(N+1)+P(N+1)*S;
+Momentumout = m_punt*v(N+1,j)+P(N+1,j)*S;
 dif_mom = abs(Momentumin-freg-Momentumout)*100/Momentumin;
 if dif_mom<0.1
-    disp('Conservació momentum correcta')
+    disp('Conservacio momentum correcta per Mach =')
+    disp('')
+    disp(M(j))
+    disp('')
 end
 
 
@@ -269,15 +285,15 @@ Cpin = 1022-0.1626*Tin+3.5025*10^(-4)*Tin^2;
 Ein = m_punt*(Cpin*Tin+(vin^2)/2); 
 
 %Energia sortida
-Cpout = 1022-0.1626*T(N+1)+3.5025*10^(-4)*T(N+1)^2;
-Eout = m_punt*(Cpout*T(N+1)+(v(N+1)^2)/2); 
+Cpout = 1022-0.1626*T(N+1,j)+3.5025*10^(-4)*T(N+1,j)^2;
+Eout = m_punt*(Cpout*T(N+1,j)+(v(N+1,j)^2)/2); 
 
 %Calculem les pèrdues per calor
  Q = 0;
 for i=1:N
-        vi = (v(i)+v(i+1))/2;
-        Ti = (T(i)+T(i+1))/2;
-        Pi = (P(i)+P(i+1))/2;
+        vi = (v(i,j)+v(i+1,j))/2;
+        Ti = (T(i,j)+T(i+1,j))/2;
+        Pi = (P(i,j)+P(i+1,j))/2;
         Cpi = 1034.09-2.849*10^(-1)*Ti+7.817*10^(-4)*Ti^2-4.971*10^(-7)*Ti^3+1.088*10^(-10)*Ti^4;
         [alfa, r, f] = compressible(Ti, Tt, vi, Pi, Di);
         Tr = Ti + r*vi^2/(Cpi*2); %Temperatura de recuperació
@@ -287,28 +303,68 @@ end
 
 dif_ene = abs(Ein-Eout+Q)*100/Ein;
 if dif_ene<0.1
-    disp('Conservació energia correcta')
+    disp('Conservacio energia correcta per Mach = ') 
+    disp('')
+    disp(M(j))
+    disp(' ')
 end
+
+
+end
+
 
 %% Plots per les diferents variables
 figure;
-plot(x,T);
-title('Temperatura en funció de x');
 
-figure;
+subplot(2,2,1);
 plot(x,P);
-title('Pressió en funció de x');
+grid on;
+title('Pressi\''o al llarg del tub');
+xlabel('Longitud del tub [m]');
+ylabel('Pressi\''o [Pa]');
+ylim([300000 550000]);
 
-figure;
+
+subplot(2,2,2);
+plot(x,T);
+grid on;
+title('Temperatura');
+xlabel('Longitud del tub [m]');
+ylabel('Temperatura [K]')
+ylim([370 405]);
+
+subplot(2,2,3);
 plot(x,v);
-title('Velocitat en funció de x');
+grid on;
+title('Velocitat');
+xlabel('Longitud del tub [m]');
+ylabel('Velocitat [$\frac{m}{s}$]')
+ylim([100 400]);
+
+subplot(2,2,4);
+plot(x,Mach);
+grid on;
+title('Mach');
+legendCell = cellstr(num2str(M, 'M=%-d'));
+legend(legendCell);
+xlabel('Longitud del tub [m]');
+ylabel('Nombre de Mach');
+ylim([0.2 1]);
+
 
 figure;
+
+subplot(2,2,1);
 plot(x,rho);
-title('Densitat en funció de x');
+grid on;
+title('Densitat al llarg del tub');
+xlabel('Longitud del tub [m]');
+ylabel('Densitat [$\frac{Kg}{m^3}$]');
+ylim([3.5 4.5]);
 
-figure;
+subplot(2,2,2);
 plot(x,Sgen);
-title('Entropia generada en funció de x');
-
-
+grid on;
+title('Entropia generada');
+xlabel('Longitud del tub [m]');
+ylabel('Entropia generada \textit{Sgen} [$\frac{J}{K}$]');

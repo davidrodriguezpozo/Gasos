@@ -31,7 +31,7 @@ M_in = 0.6; %Mach d'entrada
 
 %Dades físiques
 R_gas = 287; %Cte gas ideal [Pa*m^3/(kg*K)]
-T_wall = 200; %Temperatura tub [K]
+T_wall = 300; %Temperatura tub [K]
 
 Adiabatic = false; %Si fem el cas adiabatic li donem valor true
 %% 2. Càlculs previs ----------------------------------------------------

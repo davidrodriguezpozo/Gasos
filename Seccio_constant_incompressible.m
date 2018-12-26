@@ -11,9 +11,9 @@
 clear all;
 Di = 0.02; ri = Di/2; L = 5; epsilon = 0.0001;
 
-water = false; air = true; oil = false; %Tipus de liquid
+water = true; air = false; oil = false; %Tipus de liquid
 
-vin = 30; 
+vin = 1; 
 pin = 2e5; 
 Tin = 20+273.15; 
 Sup = pi*ri^2;
@@ -31,7 +31,7 @@ massa = Sup*vin*rhoin;
 
 Tt = 95+273.15; %En aquest cas ens donen Ttub;
 
-N = 50; %numero de VC
+N = 100000; %numero de VC
 
 
 
@@ -86,14 +86,13 @@ end
 %% Resolució del problema
     
 for i = 1:N
-    i 
     T_s(i+1) = T(i);
     P_s(i+1) = P(i);
     V_s(i+1) = v(i);
     rho_s(i+1) = rho(i);
     dif = 10e10; %Valor arbitrari per poder iterar un altre cop
     
-    while dif > 10
+    while dif > 1e-10
         
     Ti = 0.5*(T(i)+T(i+1));
     Pi = 0.5*(P(i)+P(i+1));
@@ -206,17 +205,9 @@ for i = 1:N
     alfa_v(i) = alfa;
     
     %Resolem el sistema d'equacions
-     
-    syms pres;
-    syms Temp;
-    syms vel;
-
-    eqn1 = massa*(v(i+1)-v(i)) == P(i)*Sup-pres*Sup-0.5*f*rhoi*vi^2*pi*Di*delta_x;
-    eqn2 = massa*Cpi*(Temp-T(i)) + massa*0.5*(v(i+1)^2-v(i)^2) == alfa*(Tt-0.5*(T(i)+Temp))*pi*Di*delta_x;
     
-    P(i+1) = solve(eqn1, pres);
-    T(i+1) = solve(eqn2, Temp);
-    
+    P(i+1) = 1/Sup*(-massa*(v(i+1)-v(i))-0.5*f*rhoi*vi^2*pi*Di*delta_x+P(i)*Sup);
+    T(i+1) = 1/(massa*Cpi+alfa*0.5*pi*Di*delta_x)*(alfa*(Tt-0.5*T(i))*pi*Di*delta_x+massa*Cpi*T(i)-massa*0.5*(v(i+1)^2-v(i)^2));
     %càlcul de les diferents densitats per separat.
     
     if water
@@ -226,9 +217,8 @@ for i = 1:N
     else
     rho(i+1) = P(i+1)/(287*T(i+1));    
     end
-    eqn3 = massa == rho(i+1)*vel*Sup;
     
-    v(i+1) = solve(eqn3, vel);
+    v(i+1) = massa/(rho(i+1)*Sup);
     
     q(i) = alfa*(Tt-0.5*(T(i)+T(i+1)))*pi*Di*delta_x;
    
