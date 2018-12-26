@@ -26,7 +26,7 @@ Per = Di*pi; %Perímetre del VC. [m^2]
 
 R = 287; %Constant dels gasos per l'aire
 gamma = 1.4; %Constant adiab. de l'aire
-M = [0.3;0.6;0.7;0.7851];  %Mach d'entrada. 
+M = [0.3;0.6;0.7;0.7851];  %Mach d'entrada a M > 0.7851 es torna sònic. 
 Tin = 400; %Temperatura d'entrada [K]
 pin = 5e5; %Pressió d'entrada [Pa]
 rhoin = pin/(287*Tin); %Densitat a l'entrada [Kg/m^3]
