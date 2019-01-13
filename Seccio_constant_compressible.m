@@ -1,8 +1,8 @@
 %----------DINÀMICA DE GASOS-------------
 
-set(groot, 'defaultTextInterpreter', 'latex');
-set(groot, 'defaultAxesTickLabelInterpreter','latex'); 
-set(groot, 'defaultLegendInterpreter','latex');
+set(groot, 'defaultTextInterpreter', 'default');
+set(groot, 'defaultAxesTickLabelInterpreter','default'); 
+set(groot, 'defaultLegendInterpreter','default');
 %RESOLUCIÓ ANALÍTICA DE PROBLEMA COMBINAT. 
 
 %TUB AMB FLUID INTERIOR I CONVECCIÓ EXTERIOR.
