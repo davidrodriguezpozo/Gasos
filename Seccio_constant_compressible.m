@@ -17,7 +17,7 @@ clear all;
 
 Di = 0.01; %Diàmetre del tub [m]
 ri = Di/2; %[m]
-L = 0.05364; %Longitud del tub [m]
+L = 0.05; %Longitud del tub [m]
 epsilon = 0.004; 
 S = pi*ri^2; %Superfície del VC [m^2]
 Per = Di*pi; %Perímetre del VC. [m^2]
@@ -36,12 +36,17 @@ adiabatic = false; %En cas de que sigui adiabàtic --> true
 
 %Discretització del tub
 
-N = 10000; %numero de VC
+N = 1000; %numero de VC
 delta_x = L/N; %Longitud del VC
 x = 0:delta_x:L; %Vector de la longitud del tub 
 
 %Definicio de tots els vectors (NxM)
 
+Tt = zeros(N,length(M));
+ap = zeros(N,length(M));
+aw = zeros(N,length(M));
+ae = zeros(N,length(M));
+bp = zeros(N,length(M));
 T_s = zeros(N+1,length(M));
 V_s = zeros(N+1,length(M));
 P_s = zeros(N+1,length(M));
@@ -67,7 +72,6 @@ f_v = zeros(N,length(M));
 m_v = zeros(length(M));
 vin_v = zeros(length(M));
 Trs = 300; %Suposem la temperatura de recuperació inicial
-
 %Omplim els vectors amb les variables suposades.
 
 
@@ -354,7 +358,7 @@ ylim([0.2 1]);
 
 figure;
 
-subplot(2,2,1);
+subplot(2,1,1);
 plot(x,rho);
 grid on;
 title('Densitat al llarg del tub');
@@ -362,9 +366,12 @@ xlabel('Longitud del tub [m]');
 ylabel('Densitat [$\frac{Kg}{m^3}$]');
 ylim([3.5 4.5]);
 
-subplot(2,2,2);
+subplot(2,1,2);
 plot(x,Sgen);
 grid on;
 title('Entropia generada');
+legendCell = cellstr(num2str(M, 'M=%-d'));
+legend(legendCell);
 xlabel('Longitud del tub [m]');
 ylabel('Entropia generada \textit{Sgen} [$\frac{J}{K}$]');
+
