@@ -20,7 +20,7 @@ epsilon = 0.0001; %Relative roughness [m]
 %Dades numèriques
 
 %for n=1:100
-Nvc = 5000; %Volums de control
+Nvc = 2000; %Volums de control
 %N = N(n);
 
 %Estudiem la influència del factor de convergència
@@ -123,7 +123,7 @@ for i=1:Nvc %Visitarem tots els VdC
         %Tenim Av*v(i+1)+Bv*p(i+1)-Cv = 0
         Av = m_in + f_i*Rho_i*abs(V_i)*A_i(i)*cos(Theta(i))/4;
         Bv = S(i+1)-A_i(i)*sin(Theta(i))/2;
-        Cv = (S(i)+ A_i(i)*sin(Theta(i))*0.5)*P(i) + (m_in - f_i*Rho_i*abs(V_i)*A_i(i)/4)*V(i);
+        Cv = (S(i)+ A_i(i)*sin(Theta(i))*0.5)*P(i) + (m_in - f_i*Rho_i*abs(V_i)*A_i(i)*cos(Theta(i))/4)*V(i);
 
         %Eq. de l'energia
         %At*T(i+1)+Bt*v^2(i+1)-Ct = 0
