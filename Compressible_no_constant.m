@@ -13,46 +13,50 @@ clear all;
 
 %%-----------CÀLCULS PREVIS---------------
 
+%%Entrada de dades per triar el tipus problema Supersonic-Subsonic-Ones de
+%%xoc
 
+onesdexoc = false; %posar true si volem ones de xoc.
+Quantonesdexoc = 1; %sleccionar quantes ones de xoc es volen.
+M = [0.3;0.6;0.7;0.75];  %Mach d'entrada a M > 0.7851 es torna sònic. 
+adiabatic = false; %En cas de que sigui adiabàtic --> true
+variable = true; %Posem false si la temperatura del tub és constant. 
 
-%%Dades geomètriques
+%%Dades geomètriques del tub 
 
 Di = 0.01; %Diàmetre del tub [m]
 ri = Di/2; %Radi [m]
-L = 0.09; %Longitud del tub [m]
+L = 0.05; %Longitud del tub [m]
 epsilon = 0.004; 
 S = pi*ri^2; %Superfície del VC [m^2]
 Per = Di*pi; %Perímetre del VC. [m^2]
 e = 0.001; %Espessor del tub d'1mm [m]
 
 
-%%Dades del fluid
+%%Dades del fluid i del tub
 
-lambdat = 300; %Coeficient de conductivitat termica del tub
+lambdat = 0.6; %Coeficient de conductivitat termica del tub (posem 300)
 Treferencia = 300; %Posem una temperatura per iniciar el tub. [K]
 R = 287; %Constant dels gasos per l'aire
 gamma = 1.4; %Constant adiab. de l'aire
-M = [2];  %Mach d'entrada a M > 0.7851 es torna sònic. 
+
 Tin = 400; %Temperatura d'entrada [K]
 pin = 5e5; %Pressió d'entrada [Pa]
 rhoin = pin/(287*Tin); %Densitat a l'entrada [Kg/m^3]
 
 
 onadexoc = false; %Posem false al principi per evitar una ona de xoc.
-adiabatic = false; %En cas de que sigui adiabàtic --> true
-variable = true; %Posem false si la temperatura del tub és constant. 
-alfaext = 50; %alfa exterior, considerem 50. 
+alfaext = 100; %alfa exterior, considerem 100. 
 Text = 20+273; %Temperatura de l'aire exterior (20ºC)
-onesdexoc = true; %posar true si volem ones de xoc.
-Quantonesdexoc = 3; %sleccionar quantes ones de xoc es volen.
 m = Quantonesdexoc;
+
 %Discretització del tub
 
 N = 10000; %numero de VC
 delta_x = L/N; %Longitud del VC
 x = 0:delta_x:L; %Vector de la longitud del tub 
 
-%Definicio de tots els vectors (NxM)
+%Definicio de tots els vectors (NxMxm) (VC,Mach d'entrada,Ona de xoc)
 
 Tt = zeros(N,length(M),m);
 Tt_s = zeros(N,length(M),m);
@@ -81,9 +85,6 @@ Mach = zeros(N+1,length(M),m);
 f_v = zeros(N,length(M),m);
 m_v = zeros(length(M),m);
 vin_v = zeros(length(M),m);
-Trs = 300; %Suposem la temperatura de recuperació inicial
-%Omplim els vectors amb les variables suposades.
-
 
 
 
@@ -96,6 +97,9 @@ for j = 1:length(M) %Variem el Mach a l'entrada
     m_punt = S*vin*rhoin; %Cabal màssic [Kg/s]
     vin_v(j,w) = vin;
     m_v(j,w) = m_punt;
+    
+    %%Omplim els vectos suposats amb cariables conegudes, en aquest cas les
+    %%d'entrada
     
     for i = 1:N
     Tt(i,j,w) = Treferencia;
@@ -141,7 +145,7 @@ for i = 1:N
     %Un cop calculats seguim amb el càlcul de Tr
     f_v(i,j,w) = f;
     Cpi = 1034.09-2.849*10^(-1)*Ti+7.817*10^(-4)*Ti^2-4.971*10^(-7)*Ti^3+1.088*10^(-10)*Ti^4;
-    Tr = T(i,j,w) + r*vi^2/(2*Cpi);
+    Tr = Ti + r*vi^2/(2*Cpi);
     
     
     %Calcul de conduccio
@@ -330,7 +334,8 @@ for i = 1:N
     if i ==1
         S_spec(i,j,w) = 0;
     else
-    S_spec(i,j,w) = S_spec(i-1,j,w)+Sgen(i,j,w);
+        S_spec(i,j,w) = 0;
+    S_spec(i,j,w) = S_spec(i-1,j,w)+Sgen(i,j,w)*delta_x*S*(1/m_punt)+q(i,j,w)/Tt(i,j,w);
     end
     
     end
@@ -418,7 +423,25 @@ end
 end
 
 
+
+
+
 %% Plots per les diferents variables
+
+figure;
+for i = 1:m
+plot(x,T(:,:,i)); hold on; grid on;
+% Tt(N+1,:,i) = Tt(N,:,i);
+% plot(x,Tt(:,:,i),'--');
+end
+title('Temperatura');
+legendCell = cellstr(num2str(M, 'M=%-d'));
+legend(legendCell);
+xlabel('Longitud del tub [m]');
+ylabel('Temperatura [K]')
+
+
+
 figure;
 
 
@@ -426,8 +449,6 @@ subplot(1,2,1);
 for i = 1:m
 plot(x,P(:,:,i)); hold on;
 end
-% plot(x,P(:,:,2));
-% plot(x,P(:,:,3));
 grid on;
 title('Pressi\''o');
 xlabel('Longitud del tub [m]');
@@ -438,8 +459,6 @@ subplot(1,2,2);
 for i = 1:m
 plot(x,T(:,:,i)); hold on;
 end
-% plot(x,T(:,:,2));
-% plot(x,T(:,:,3));
 grid on;
 title('Temperatura');
 legendCell = cellstr(num2str(M, 'M=%-d'));
@@ -447,13 +466,14 @@ legend(legendCell);
 xlabel('Longitud del tub [m]');
 ylabel('Temperatura [K]')
 
+
+
 figure;
+
 subplot(1,2,1);
 for i=1:m
 plot(x,v(:,:,i)); hold on;
 end
-% plot(x,v(:,:,2));
-% plot(x,v(:,:,3));
 grid on;
 title('Velocitat');
 xlabel('Longitud del tub [m]');
@@ -472,23 +492,31 @@ xlabel('Longitud del tub [m]');
 ylabel('Nombre de Mach');
 
 
-% figure;
 
-% subplot(1,2,1);
-% plot(x,S_spec);
-% grid on;
-% title('Densitat');
-% xlabel('Longitud del tub [m]');
-% ylabel('Densitat [$\frac{Kg}{m^3}$]');
-% 
-% subplot(1,2,2);
-% plot(x,Sgen);
-% grid on;
-% title('Entropia generada');
-% legendCell = cellstr(num2str(M, 'M=%-d'));
-% legend(legendCell);
-% xlabel('Longitud del tub [m]');
-% ylabel('Entropia generada \textit{Sgen} [$\frac{J}{K}$]');
+
+
+figure;
+
+subplot(1,2,1);
+S_spec(N+1,:,:) = S_spec(N,:,:);
+for i=1:m
+plot(x,S_spec(:,:,i)); hold on;
+end
+grid on;
+title('Entropia especifica');
+xlabel('Longitud del tub [m]');
+ylabel('Entropia [$\frac{Kg}{m^3}$]');
+
+subplot(1,2,2);
+for i=1:m
+plot(x,Sgen(:,:,i)); hold on;
+end
+grid on;
+title('Entropia generada');
+legendCell = cellstr(num2str(M, 'M=%-d'));
+legend(legendCell);
+xlabel('Longitud del tub [m]');
+ylabel('Entropia generada \textit{Sgen} [$\frac{J}{K}$]');
 
 figure;
 plot(Tt(:,:,1));
